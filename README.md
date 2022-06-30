@@ -12,6 +12,12 @@ hashest-index.pl: indexes a fasta file
   --k       kmer length [default: 16]
   --help    This useful help menu
 
+hashest-search.pl: reports an MLST profile for a genome assembly
+  Usage: hashest-search.pl [options] *.fasta [*.gbk...] > out.tsv
+    --db      Database from hashest-index.pl
+    --dump    Dump the database instead of analyzing anything 
+    --help    This useful help menu
+
 ```
 
 # Installation

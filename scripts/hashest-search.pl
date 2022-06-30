@@ -110,6 +110,7 @@ sub usage{
   print "$0: reports an MLST profile for a genome assembly
   Usage: $0 [options] *.fasta [*.gbk...] > out.tsv
   --db      Database from hashest-index.pl
+  --dump    Dump the database instead of analyzing anything 
   --help    This useful help menu
   ";
   exit 0;
