@@ -7,9 +7,11 @@ use Getopt::Long;
 use File::Basename qw/basename/;
 use Bio::SeqIO;
 use Storable qw/nstore_fd/;
+use List::MoreUtils qw/uniq/;
 
 # Quick hash implementation that is core-perl
-use B qw/hash/;
+#use B qw/hash/;
+use Digest::MD5 qw/md5_hex/;
 
 local $0 = basename $0;
 sub logmsg{local $0=basename $0; print STDERR "$0: @_\n";}
@@ -39,8 +41,10 @@ sub main{
       }
     }
 
-
   }
+
+  my @loci = sort {$a cmp $b} uniq(values(%{$index{locus}}));
+  $index{locusArray} = \@loci;
 
   # Save the indices
   my $indexfile = $$settings{output};
@@ -65,10 +69,10 @@ sub indexFasta{
     my $allele = pop(@F);
     my $locus = join("_", @F);
 
-    my $locusHash  = hash(substr($sequence, 0, $k));
-    my $alleleHash = hash($sequence);
+    my $locusHash  = md5_hex(substr($sequence, 0, $k));
+    #my $alleleHash = md5_hex($sequence);
     $indexLocus{$locusHash} = $locus;
-    $indexAllele{$alleleHash} = [$locus, $allele, $sequence];
+    $indexAllele{$locus}{$sequence} = [$locus, $allele];
   }
   return {locus=>\%indexLocus, allele=>\%indexAllele};
 }

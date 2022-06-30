@@ -28,12 +28,23 @@ export PATH=$PATH:~/bin/hashest/scripts
 
 Inspired by [Gustle](https://github.com/supernifty/gustle)
 
+Uses native perl md5 hashing.
+
 1. Index the database
-   * hash the first _k_ nucleotides of each allele in the database (`hash` => `locusname`)
-   * hash the whole sequence of the alleles too (`hash` => `[locus, allele, sequence]`)
+   * hash the first _k_ nucleotides of each allele in the database 
+   * save whole sequence of the alleles too
    * Save to index file
 2. Search the database (TODO)
    * hash a sliding window of a genome assembly of _k_ length
    * Find the right locus: match hash to locus
    * Find the right allele of the locus: match sequence to alleles of locus
 
+# Database structure
+
+Database is in a Perl storable object, similar to a Python pickle.
+The data structure has these keys
+
+* locusArray => [array of locus names]
+* locus => associative array of `hash`=>`locusname`
+* allele => associative array of `locus` => `[sequence]` => `[locus, allele]`
+* settings => information about the database.  Stores `k`.
