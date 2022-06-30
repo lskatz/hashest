@@ -52,7 +52,7 @@ sub indexFasta{
   my %indexLocus;
   my %indexAllele;
 
-  my $in = Bio::SeqIO->new(-file=>$file, -format=>"fasta");
+  my $in = Bio::SeqIO->new(-file=>$file);
   while(my $seq = $in->next_seq){
     my $sequence = $seq->seq;
     my $id = $seq->id;
@@ -73,8 +73,8 @@ sub usage{
   print "$0: indexes a fasta file
   Fasta file have deflines in the format of >locus_allele
     where locus is a string and allele is an int
-  Usage: $0 [options] arg1
-  --k    16 kmer length
+  Usage: $0 [options] *.fasta [*.gbk...]
+  --k       kmer length [default: 16]
   --help    This useful help menu
   ";
   exit 0;
