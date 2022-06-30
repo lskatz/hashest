@@ -6,7 +6,7 @@ use Data::Dumper;
 use Getopt::Long;
 use File::Basename qw/basename/;
 use Bio::SeqIO;
-use Storable qw/nstore_fd retrieve/;
+use Storable qw/nstore_fd/;
 
 # Quick hash implementation that is core-perl
 use B qw/hash/;
@@ -17,31 +17,36 @@ exit(main());
 
 sub main{
   my $settings={};
-  GetOptions($settings,qw(help k=i)) or die $!;
+  GetOptions($settings,qw(help output=s k=i)) or die $!;
   usage() if($$settings{help} || !@ARGV);
 
   $$settings{k} ||= 16;
+  $$settings{output} ||= die("ERROR: need --output");
 
-  my(%locusIndex, %alleleIndex);
+  my %index = (
+    settings => {
+      k => $$settings{k},
+    }
+  );
+
   for my $f(@ARGV){
     my $indices = indexFasta($f, $$settings{k}, $settings);
 
-    %locusIndex  = (%locusIndex, %{$$indices{locus}});
-    %alleleIndex = (%alleleIndex, %{$$indices{allele}});
+    # Combine the associative arrays into the larger associative array
+    for my $key(qw(locus allele)){
+      while(my($hash, $values) = each(%{ $$indices{$key} })){
+        $index{$key}{$hash} = $values;
+      }
+    }
+
 
   }
 
-  ...;
-  
   # Save the indices
-  #my $locusIndex  = "$f.idl";
-  #my $alleleIndex = "$f.ida";
-  #open (my $fh, '>:raw', $locusIndex) or die "ERROR: could not write to $locusIndex: $!";
-  #nstore_fd $$indices{locus}, $fh;
-  #close $fh;
-  #open($fh, '>:raw', $alleleIndex) or die "ERROR: could not write to $alleleIndex: $!";
-  #nstore_fd $$indices{allele}, $fh;
-  #close $fh;
+  my $indexfile = $$settings{output};
+  open (my $fh, '>:raw', $indexfile) or die "ERROR: could not write to $indexfile: $!";
+  nstore_fd \%index, $fh;
+  close $fh;
 
   return 0;
 }
@@ -75,6 +80,7 @@ sub usage{
     where locus is a string and allele is an int
   Usage: $0 [options] *.fasta [*.gbk...]
   --k       kmer length [default: 16]
+  --output  Output prefix for index files
   --help    This useful help menu
   ";
   exit 0;
