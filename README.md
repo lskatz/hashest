@@ -20,6 +20,12 @@ hashest-search.pl: reports an MLST profile for a genome assembly
 
 ```
 
+`hashest-index` results in a database as described in its own section below.
+
+`hashest-search` results in a tsv stdout output.
+Columns are loci, rows are assemblies, and values are alleles.
+Tildes (`~`) represent multiple allele matches and probably multiple copies/variations of a gene.
+
 # Installation
 
 Requires perl and BioPerl
