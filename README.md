@@ -46,7 +46,7 @@ Uses native perl md5 hashing.
    * hash the first _k_ nucleotides of each allele in the database 
    * save whole sequence of the alleles too
    * Save to index file
-2. Search the database (TODO)
+2. Search the database 
    * hash a sliding window of a genome assembly of _k_ length
    * Find the right locus: match hash to locus
    * Find the right allele of the locus: match sequence to alleles of locus
