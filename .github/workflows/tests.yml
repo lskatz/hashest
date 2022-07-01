@@ -13,7 +13,7 @@ jobs:
       - uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: ${{ matrix.perl }}
-          install-modules: Bio::Perl 
+          install-modules: Bio::Perl Bio::SeqIO
       - uses: actions/checkout@v3
       - run: perl -V
       - name: perl Makefile.PL
