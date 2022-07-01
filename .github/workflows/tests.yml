@@ -26,4 +26,6 @@ jobs:
       - uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: ${{ matrix.perl }}
-      # do something
+      - run: perl -V
+      - run: cpanm --installdeps .
+      - run: prove -lv t
