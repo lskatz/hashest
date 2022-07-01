@@ -12,11 +12,11 @@ jobs:
       - uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: ${{ matrix.perl }}
+          install-modules: Bio::Perl 
       - uses: actions/checkout@v3
       - run: perl -V
       - name: perl Makefile.PL
         run: |
-          sudo apt-get install bioperl
           perl Makefile.PL
       - run: cpanm --installdeps .
       - run: prove -lv t
