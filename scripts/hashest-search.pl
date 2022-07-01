@@ -14,6 +14,7 @@ use Thread::Queue;
 # Quick hash implementation that is core-perl
 #use B qw/hash/;
 use Digest::MD5 qw/md5_hex/;
+my $expectedHashing = "md5_hex";
 
 local $0 = basename $0;
 sub logmsg{my $TID=threads->tid; local $0=basename $0; print STDERR "$0 (TID $TID): @_\n";}
@@ -39,6 +40,9 @@ sub main{
     return 0;
   }
   logmsg "DONE: loading index $$settings{db}";
+
+  $$index{settings}{hashing} eq $expectedHashing
+    or die "ERROR: the hashing algorithm for this database is expected to be $expectedHashing, but we found ".$$index{settings}{hashing};
 
   my @thr;
   my $asmQ = Thread::Queue->new(@ARGV);

@@ -32,7 +32,7 @@ Tildes (`~`) represent multiple allele matches and probably multiple copies/vari
 
 # Installation
 
-Requires perl and BioPerl
+Requires perl with threads and BioPerl
 
 ```
 cd ~/bin
@@ -54,6 +54,7 @@ Uses native perl md5 hashing.
    * hash a sliding window of a genome assembly of _k_ length
    * Find the right locus: match hash to locus
    * Find the right allele of the locus: match sequence to alleles of locus
+   * If multiple cpus given, multiple assemblies will be analyzed at the same time, each single threaded.
 
 # Database structure
 
@@ -63,4 +64,5 @@ The data structure has these keys
 * locusArray => [array of locus names]
 * locus => associative array of `hash`=>`locusname`
 * allele => associative array of `locus` => `[sequence]` => `[locus, allele]`
-* settings => information about the database.  Stores `k`.
+* settings => information about the database.  Stores `k`, `hashing` (hashing is `md5_hex` in v0.2 and later).
+
