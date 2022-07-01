@@ -16,7 +16,7 @@ jobs:
       - run: perl -V
       - name: perl Makefile.PL
         run: |
-          apt-get install bioperl
+          sudo apt-get install bioperl
           perl Makefile.PL
       - run: cpanm --installdeps .
       - run: prove -lv t
