@@ -13,21 +13,30 @@ use List::MoreUtils qw/uniq/;
 #use B qw/hash/;
 use Digest::MD5 qw/md5_hex/;
 
+use version 0.77;
+our $VERSION="0.2";
+
 local $0 = basename $0;
 sub logmsg{local $0=basename $0; print STDERR "$0: @_\n";}
 exit(main());
 
 sub main{
   my $settings={};
-  GetOptions($settings,qw(help output=s k=i)) or die $!;
+  GetOptions($settings,qw(help version output=s k=i)) or die $!;
   usage() if($$settings{help} || !@ARGV);
 
   $$settings{k} ||= 16;
   $$settings{output} ||= die("ERROR: need --output");
 
+  if($$settings{version}){
+    print "$0 $VERSION\n";
+    return 0;
+  }
+
   my %index = (
     settings => {
       k => $$settings{k},
+      version => $VERSION,
     }
   );
 
@@ -85,6 +94,7 @@ sub usage{
   Usage: $0 [options] *.fasta [*.gbk...]
   --k       kmer length [default: 16]
   --output  Output prefix for index files
+  --version print version and exit
   --help    This useful help menu
   ";
   exit 0;
