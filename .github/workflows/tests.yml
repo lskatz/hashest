@@ -9,6 +9,7 @@ jobs:
       matrix: 
         perl: ["5.36.0", "5.34.1", "5.18.4"]
     steps:
+      - run: sudo apt-get -y install tree libberkeleydb-perl libdb-dev bioperl perl cpanminus curl build-essential bioperl-run
       - uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: ${{ matrix.perl }}
@@ -17,7 +18,6 @@ jobs:
       - run: perl -V
       - name: perl Makefile.PL
         run: |
-          sudo apt-get -y install tree libberkeleydb-perl libdb-dev bioperl perl cpanminus curl build-essential bioperl-run
           perl Makefile.PL
       - run: cpanm --installdeps .
       - run: prove -lv t
