@@ -29,6 +29,7 @@ hashest-search.pl: reports an MLST profile for a genome assembly
 `hashest-search` results in a tsv stdout output.
 Columns are loci, rows are assemblies, and values are alleles.
 Tildes (`~`) represent multiple allele matches and probably multiple copies/variations of a gene.
+Question marks (`?`) indicate a match to a locus via a hash match, but no allele match was found.
 
 # Installation
 

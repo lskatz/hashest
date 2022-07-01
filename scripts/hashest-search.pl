@@ -119,6 +119,7 @@ sub searchAsm{
       my $seqLength = length($sequence);
 
       # sliding window to get hashes and match against db
+      SLIDING_WINDOW:
       for(my $i=0; $i<$seqLength-$k; $i++){
         my $subseq = substr($sequence, $i, $k);
         my $locusHash = md5_hex($subseq);
@@ -144,9 +145,18 @@ sub searchAsm{
 
               # push ahead the search to wherever $j is but back it up the kmer length
               $i += $j-$k;
-              last;
+              next SLIDING_WINDOW;
             }
           }
+          # If we get to this point, then `next SLIDING_WINDOW` was not run,
+          # but a locus was identified.
+          # Mark that we think we know the locus but not the allele.
+          my $allele = "?";
+          if(defined $locus{$locus}){
+            logmsg "WARNING: locus $locus is defined more than once. Appending allele $locus{$locus} with ~$allele";
+            $allele = "~$allele";
+          }
+          $locus{$locus} .= $allele;
         }
       }
     }
