@@ -21,7 +21,8 @@ jobs:
     needs: list
     strategy:
       fail-fast: false
-      matrix: ${{fromJson(needs.list.outputs.matrix)}}
+      #matrix: ${{fromJson(needs.list.outputs.matrix)}}
+      matrix: [5.34.1]
     steps:
       - uses: shogo82148/actions-setup-perl@v1
         with:
