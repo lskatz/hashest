@@ -20,7 +20,9 @@ hashest-search.pl: reports an MLST profile for a genome assembly
 
 ```
 
-`hashest-index` results in a database as described in its own section below.
+* Step 1: get a fasta file or set of fasta files with alleles in the format of `>locus_allele`, e.g., `>abcZ_1`.
+* Step 2: run `hashest-index.pl` on the set of fasta file(s) to create a new index. The database is described in its own section below.
+* Step 3: analyze an assembly against the new index with `hashest-search.pl`.
 
 `hashest-search` results in a tsv stdout output.
 Columns are loci, rows are assemblies, and values are alleles.
