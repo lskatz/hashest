@@ -41,11 +41,11 @@ subtest 'search' => sub{
     'dnaN' => '7',
     'hemD' => '12',
     'hisD' => '9',
-    'purE' => '5',
+    'purE' => '?~5',
     'sucA' => '9',
     'thrA' => '2',
   );
-  is_deeply(\%expectedProfile, \%profile, "7-gene MLST results");
+  is_deeply(\%profile, \%expectedProfile, "7-gene MLST results");
 };
 
 
