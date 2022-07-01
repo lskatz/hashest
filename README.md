@@ -16,6 +16,7 @@ hashest-index.pl: indexes a fasta file
 hashest-search.pl: reports an MLST profile for a genome assembly
   Usage: hashest-search.pl [options] *.fasta [*.gbk...] > out.tsv
     --db      Database from hashest-index.pl
+    --numcpus Number of threads to use [default: 1]
     --dump    Dump the database instead of analyzing anything 
     --help    This useful help menu
 

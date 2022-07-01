@@ -14,7 +14,7 @@ use List::MoreUtils qw/uniq/;
 use Digest::MD5 qw/md5_hex/;
 
 use version 0.77;
-our $VERSION="0.2.1";
+our $VERSION="0.3";
 
 local $0 = basename $0;
 sub logmsg{local $0=basename $0; print STDERR "$0: @_\n";}
@@ -37,6 +37,7 @@ sub main{
     settings => {
       k => $$settings{k},
       version => $VERSION,
+      hashing => "md5_hex",
     }
   );
 

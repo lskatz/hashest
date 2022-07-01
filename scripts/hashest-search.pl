@@ -8,23 +8,28 @@ use File::Basename qw/basename/;
 use Bio::SeqIO;
 use Storable qw/retrieve/;
 
+use threads;
+use Thread::Queue;
+
 # Quick hash implementation that is core-perl
 #use B qw/hash/;
 use Digest::MD5 qw/md5_hex/;
 
 local $0 = basename $0;
-sub logmsg{local $0=basename $0; print STDERR "$0: @_\n";}
+sub logmsg{my $TID=threads->tid; local $0=basename $0; print STDERR "$0 (TID $TID): @_\n";}
 exit(main());
 
 sub main{
   my $settings={};
-  GetOptions($settings,qw(help version k dump db|database=s)) or die $!;
+  GetOptions($settings,qw(help numcpus=i version k dump db|database=s)) or die $!;
   usage() if($$settings{help} || !@ARGV);
 
   $$settings{db} ||= die("ERROR: need --db");
+  # TODO might be smart to get the actual locus max length in the database
   $$settings{maxGeneLength}=10000;
   $$settings{version} && die "ERROR: you can only use --version with hashest-index.pl";
   $$settings{k} && die "ERROR: you can only use --k with hashest-index.pl";
+  $$settings{numcpus} ||= 1;
 
   logmsg "START: loading index $$settings{db}";
   my $index = retrieve($$settings{db});
@@ -34,24 +39,66 @@ sub main{
     return 0;
   }
   logmsg "DONE: loading index $$settings{db}";
-  my $k = $$index{settings}{k} || die "ERROR: could not find k in database $$settings{db}";
 
-  # Print header
-  print join("\t", "Assembly", @{ $$index{locusArray} })."\n";
-  for my $asm(@ARGV){
-    logmsg "Typing for $asm";
-    my $loci = searchAsm($asm, $k, $index, $settings);
-
-    # Print a line of results
-    print $asm;
-    for my $locus(@{ $$index{locusArray} }){
-      my $allele = $$loci{$locus} // 0;
-      print "\t$allele";
-    }
-    print "\n";
+  my @thr;
+  my $asmQ = Thread::Queue->new(@ARGV);
+  # Kick off the printer queue and give it the header to print first
+  my $printQ = Thread::Queue->new(
+    # The header is the assembly and then all the loci
+    join("\t", "Assembly", @{ $$index{locusArray} })
+  );
+  # Kick off threads
+  for(my $i=0;$i<$$settings{numcpus};$i++){
+    $thr[$i] = threads->new(\&searchAsmWorker, $index, $asmQ, $printQ, $settings);
   }
 
+  # Start off printer thread
+  my $printer = threads->new(\&printer, $printQ, $settings);
+
+  # Send termination signal to threads
+  for(@thr){
+    $asmQ->enqueue(undef);
+  }
+  # Wait for threads to finish
+  for(@thr){
+    $_->join;
+  }
+
+  # Wait for the printer to finish
+  $printQ->enqueue(undef);
+  $printer->join;
+
   return 0;
+}
+
+# Separate printer thread to make sure there is no stdout collisions.
+sub printer{
+  my($Q, $settings) = @_;
+  while(defined(my $line = $Q->dequeue)){
+    print $line . "\n";
+  }
+}
+
+sub searchAsmWorker{
+  my($index, $asmQ, $printQ, $settings) = @_;
+  my $k = $$index{settings}{k} || die "ERROR: could not find k in database $$settings{db}";
+  my @locusName = @{ $$index{locusArray} };
+
+  my $numSearched = 0;
+  while(defined(my $asm = $asmQ->dequeue)){
+    logmsg "Typing for $asm";
+    my $loci = searchAsm($asm, $k, $index, $settings);
+    my $printLine = $asm;
+    for my $locus(@locusName){
+      my $allele = $$loci{$locus} // 0;
+      $printLine .= "\t$allele";
+    }
+    $printQ->enqueue($printLine);
+
+    $numSearched++;
+  }
+
+  return $numSearched;
 }
 
 sub searchAsm{
@@ -112,6 +159,7 @@ sub usage{
   print "$0: reports an MLST profile for a genome assembly
   Usage: $0 [options] *.fasta [*.gbk...] > out.tsv
   --db      Database from hashest-index.pl
+  --numcpus Number of threads to use [default: 1]
   --dump    Dump the database instead of analyzing anything 
   --help    This useful help menu
   ";
