@@ -19,5 +19,6 @@ jobs:
       - name: perl Makefile.PL
         run: |
           perl Makefile.PL
+          make
       - run: cpanm --installdeps .
       - run: prove -lv t

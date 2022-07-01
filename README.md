@@ -10,6 +10,7 @@ hashest-index.pl: indexes a fasta file
     where locus is a string and allele is an int
   Usage: hashest-index.pl [options] *.fasta [*.gbk...]
   --k       kmer length [default: 16]
+  --version print version and exit
   --help    This useful help menu
 
 hashest-search.pl: reports an MLST profile for a genome assembly

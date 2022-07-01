@@ -18,12 +18,13 @@ exit(main());
 
 sub main{
   my $settings={};
-  GetOptions($settings,qw(help version dump db|database=s)) or die $!;
+  GetOptions($settings,qw(help version k dump db|database=s)) or die $!;
   usage() if($$settings{help} || !@ARGV);
 
   $$settings{db} ||= die("ERROR: need --db");
   $$settings{maxGeneLength}=10000;
   $$settings{version} && die "ERROR: you can only use --version with hashest-index.pl";
+  $$settings{k} && die "ERROR: you can only use --k with hashest-index.pl";
 
   logmsg "START: loading index $$settings{db}";
   my $index = retrieve($$settings{db});
