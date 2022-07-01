@@ -17,6 +17,7 @@ jobs:
       - run: perl -V
       - name: perl Makefile.PL
         run: |
+          sudo apt-get -y install tree libberkeleydb-perl libdb-dev bioperl perl cpanminus curl build-essential bioperl-run
           perl Makefile.PL
       - run: cpanm --installdeps .
       - run: prove -lv t
