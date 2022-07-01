@@ -14,6 +14,7 @@ jobs:
         with:
           perl-version: ${{ matrix.perl }}
           install-modules: Bio::Perl Bio::SeqIO
+          multi-thread: true
       - uses: actions/checkout@v3
       - run: perl -V
       - name: perl Makefile.PL
