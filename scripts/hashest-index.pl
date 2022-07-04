@@ -24,16 +24,16 @@ exit(main());
 sub main{
   my $settings={};
   GetOptions($settings,qw(help hashing=s version output=s k=i)) or die $!;
+  if($$settings{version}){
+    print "$0 $VERSION\n";
+    return 0;
+  }
+
   usage() if($$settings{help} || !@ARGV);
 
   $$settings{k} ||= 16;
   $$settings{output} ||= die("ERROR: need --output");
   $$settings{hashing}||= "md5_hex";
-
-  if($$settings{version}){
-    print "$0 $VERSION\n";
-    return 0;
-  }
 
   my %index = (
     settings => {
