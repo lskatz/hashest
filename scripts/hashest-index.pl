@@ -15,7 +15,7 @@ use Digest::MD5 qw/md5_hex md5/;
 use Digest::SHA qw/sha1_hex sha1/;
 
 use version 0.77;
-our $VERSION="0.4.0";
+our $VERSION="0.5.0";
 
 local $0 = basename $0;
 sub logmsg{local $0=basename $0; print STDERR "$0: @_\n";}
@@ -40,6 +40,7 @@ sub main{
       k => $$settings{k},
       version => $VERSION,
       hashing => $$settings{hashing},
+      locusArray => [], # To be filled out later as an array of locus names
     }
   );
 
@@ -51,6 +52,11 @@ sub main{
       while(my($hash, $values) = each(%{ $$indices{$key} })){
         $index{$key}{$hash} = $values;
       }
+    }
+
+    # Record the stops
+    while(my($stop, $count) = each(%{ $$indices{stops} })){
+      $index{stops}{$stop} += $count;
     }
 
   }
@@ -73,6 +79,7 @@ sub indexFasta{
   my %indexLocus;
   my %indexAllele;
   my $hashing_sub = \&{$$settings{hashing}};
+  my %stops;
 
   my $in = Bio::SeqIO->new(-file=>$file);
   while(my $seq = $in->next_seq){
@@ -86,8 +93,12 @@ sub indexFasta{
     #my $alleleHash = md5_hex($sequence);
     $indexLocus{$locusHash} = $locus;
     $indexAllele{$locus}{$sequence} = [$locus, $allele];
+
+    # Record the stop codon
+    my $stop = substr($sequence, -3, 3);
+    $stops{$stop}++;
   }
-  return {locus=>\%indexLocus, allele=>\%indexAllele};
+  return {locus=>\%indexLocus, allele=>\%indexAllele, stops=>\%stops};
 }
 
 

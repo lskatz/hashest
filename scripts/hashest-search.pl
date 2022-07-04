@@ -22,8 +22,9 @@ exit(main());
 
 sub main{
   my $settings={};
-  GetOptions($settings,qw(help numcpus=i version k dump db|database=s)) or die $!;
-  usage() if($$settings{help} || !@ARGV);
+  GetOptions($settings,qw(help putatives numcpus=i version k dump db|database=s)) or die $!;
+
+  usage() if($$settings{help});
 
   $$settings{db} ||= die("ERROR: need --db");
   # TODO might be smart to get the actual locus max length in the database
@@ -40,6 +41,11 @@ sub main{
     return 0;
   }
   logmsg "DONE: loading index $$settings{db}";
+  usage() if(!@ARGV);
+
+  # Form a regex to capture stop codons
+  my $stopsRegexStr = '(?:' . join("|", sort{$a cmp $b} keys(%{ $$index{stops} })) . ')$';
+  $$settings{stopsRegex} = qr/$stopsRegexStr/i;
 
   #$$index{settings}{hashing} eq $expectedHashing
   #  or die "ERROR: the hashing algorithm for this database is expected to be $expectedHashing, but we found ".$$index{settings}{hashing};
@@ -110,6 +116,7 @@ sub searchAsm{
   my($asm, $k, $hashing_sub, $index, $settings) = @_;
 
   my %locus;
+  my $stopsRegex = $$settings{stopsRegex};
 
   my $in=Bio::SeqIO->new(-file=>$asm);
   while(my $seqOrig = $in->next_seq){
@@ -134,6 +141,10 @@ sub searchAsm{
           # Get downstream sequence to see if it matches an allele
           for(my $j=$k;$j<$$settings{maxGeneLength};$j++){
             my $candidateSequence = substr($sequence, $i, $j);
+	    if($candidateSequence !~ $stopsRegex){
+	      next;
+	    }
+
             if($$index{allele}{$locus}{$candidateSequence}){
               #logmsg "Found $candidateSequence";
               #push(@locus, $$index{allele}{$locus}{$candidateSequence});
@@ -149,6 +160,10 @@ sub searchAsm{
               next SLIDING_WINDOW;
             }
           }
+
+	  # The next part of this loop is only when we care about putative alleles
+	  # for a locus we might have detected.
+	  next if(!$$settings{putatives});
           # If we get to this point, then `next SLIDING_WINDOW` was not run,
           # but a locus was identified.
           # Mark that we think we know the locus but not the allele.
@@ -173,10 +188,13 @@ sub searchAsm{
 sub usage{
   print "$0: reports an MLST profile for a genome assembly
   Usage: $0 [options] *.fasta [*.gbk...] > out.tsv
-  --db      Database from hashest-index.pl
-  --numcpus Number of threads to use [default: 1]
-  --dump    Dump the database instead of analyzing anything 
-  --help    This useful help menu
+  --db         Database from hashest-index.pl
+  --numcpus    Number of threads to use [default: 1]
+  --dump       Dump the database instead of analyzing anything 
+  --putatives  Print a '?' instead of an int when a locus
+               has been detected but no exact allele was
+	       found
+  --help       This useful help menu
   ";
   exit 0;
 }

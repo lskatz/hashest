@@ -22,6 +22,11 @@ subtest 'search' => sub{
   my $exit_code = system("hashest-search.pl --db $index $asm > $res 2> $res.log");
   is($exit_code, 0, "searching the senterica scheme with ".basename($asm));
 
+  if($exit_code > 0){
+    note `cat $res.log`;
+    BAIL_OUT("profile was not correct");
+  }
+
   my %profile;
   {
     open(my $fh, $res) or BAIL_OUT("ERROR: could not read $res: $!");
@@ -41,7 +46,7 @@ subtest 'search' => sub{
     'dnaN' => '7',
     'hemD' => '12',
     'hisD' => '9',
-    'purE' => '?~5',
+    'purE' => '5',
     'sucA' => '9',
     'thrA' => '2',
   );
