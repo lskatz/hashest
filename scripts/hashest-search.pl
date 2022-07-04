@@ -14,7 +14,7 @@ use Thread::Queue;
 # Quick hash implementation that is core-perl
 #use B qw/hash/;
 use Digest::MD5 qw/md5_hex/;
-my $expectedHashing = "md5_hex";
+use Digest::SHA qw/sha1_hex/;
 
 local $0 = basename $0;
 sub logmsg{my $TID=threads->tid; local $0=basename $0; print STDERR "$0 (TID $TID): @_\n";}
@@ -41,8 +41,8 @@ sub main{
   }
   logmsg "DONE: loading index $$settings{db}";
 
-  $$index{settings}{hashing} eq $expectedHashing
-    or die "ERROR: the hashing algorithm for this database is expected to be $expectedHashing, but we found ".$$index{settings}{hashing};
+  #$$index{settings}{hashing} eq $expectedHashing
+  #  or die "ERROR: the hashing algorithm for this database is expected to be $expectedHashing, but we found ".$$index{settings}{hashing};
 
   my @thr;
   my $asmQ = Thread::Queue->new(@ARGV);
@@ -86,12 +86,13 @@ sub printer{
 sub searchAsmWorker{
   my($index, $asmQ, $printQ, $settings) = @_;
   my $k = $$index{settings}{k} || die "ERROR: could not find k in database $$settings{db}";
+  my $hashing_sub = \&{$$index{settings}{hashing}};
   my @locusName = @{ $$index{locusArray} };
 
   my $numSearched = 0;
   while(defined(my $asm = $asmQ->dequeue)){
     logmsg "Typing for $asm";
-    my $loci = searchAsm($asm, $k, $index, $settings);
+    my $loci = searchAsm($asm, $k, $hashing_sub, $index, $settings);
     my $printLine = $asm;
     for my $locus(@locusName){
       my $allele = $$loci{$locus} // 0;
@@ -106,7 +107,7 @@ sub searchAsmWorker{
 }
 
 sub searchAsm{
-  my($asm, $k, $index, $settings) = @_;
+  my($asm, $k, $hashing_sub, $index, $settings) = @_;
 
   my %locus;
 
@@ -122,7 +123,7 @@ sub searchAsm{
       SLIDING_WINDOW:
       for(my $i=0; $i<$seqLength-$k; $i++){
         my $subseq = substr($sequence, $i, $k);
-        my $locusHash = md5_hex($subseq);
+        my $locusHash = &$hashing_sub($subseq);
 
         #logmsg "Compare $locusHash";
         # Test if we found the locus hash which would indicate we found the locus
