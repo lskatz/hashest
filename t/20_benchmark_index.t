@@ -12,28 +12,30 @@ $ENV{PATH} = "$RealBin/../scripts:".$ENV{PATH};
 my $asm = "$RealBin/SRR6881054.shovillSpades.fasta";
 my $dbDir = "$RealBin/senterica";
 my $index = "$RealBin/senterica.hashest";
-my $sha1Index = "$RealBin/senterica.sha1.hashest";
 my $res = "$RealBin/res.tsv";
 
-sub hashestIndexMd5{
-  my $exit_code = system("hashest-index.pl --hashing md5_hex $dbDir/*.tfa --output $index");
+my @hashing=qw(md5 md5_hex sha1 sha1_hex);
+
+sub hashestIndex{
+  my($hashing) = @_;
+  my $exit_code = system("hashest-index.pl --hashing $hashing $dbDir/*.tfa --output $index.$hashing");
   return $exit_code;
 }
 
-sub hashestIndexSha1{
-  my $exit_code = system("hashest-index.pl --hashing sha1_hex $dbDir/*.tfa --output $sha1Index");
-  return $exit_code;
-}
-
-my $hashestIndexMd5ExitCode = hashestIndexMd5();
-is($hashestIndexMd5ExitCode, 0, "Run hashest-index MD5");
-my $hashestIndexSha1ExitCode = hashestIndexSha1();
-is($hashestIndexSha1ExitCode, 0, "Run hashest-index SHA1");
+subtest 'hashing index' => sub{
+  plan tests => scalar(@hashing);
+  for my $h(@hashing){
+    my $exit_code = hashestIndex($h);
+    is($exit_code, 0, "Run hashest-index $h");
+  }
+};
 
 my $cmp = 
   cmpthese(10, { 
-      'hashestIndexMd5'     => sub { hashestIndexMd5() },
-      'hashestIndexSha1'    => sub { hashestIndexSha1() },
+      'hashestIndexMd5'     => sub { hashestIndex("md5") },
+      'hashestIndexMd5_hex' => sub { hashestIndex("md5_hex") },
+      'hashestIndexSha1'    => sub { hashestIndex("sha1") },
+      'hashestIndexSha1_hex'=> sub { hashestIndex("sha1_hex") },
   });
 
 for(my $i=0;$i<@$cmp;$i++){

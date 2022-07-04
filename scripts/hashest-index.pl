@@ -11,8 +11,8 @@ use List::MoreUtils qw/uniq/;
 
 # Quick hash implementation that is core-perl
 #use B qw/hash/;
-use Digest::MD5 qw/md5_hex/;
-use Digest::SHA qw/sha1_hex/;
+use Digest::MD5 qw/md5_hex md5/;
+use Digest::SHA qw/sha1_hex sha1/;
 
 use version 0.77;
 our $VERSION="0.4.0";

@@ -13,8 +13,8 @@ use Thread::Queue;
 
 # Quick hash implementation that is core-perl
 #use B qw/hash/;
-use Digest::MD5 qw/md5_hex/;
-use Digest::SHA qw/sha1_hex/;
+use Digest::MD5 qw/md5_hex md5/;
+use Digest::SHA qw/sha1_hex sha1/;
 
 local $0 = basename $0;
 sub logmsg{my $TID=threads->tid; local $0=basename $0; print STDERR "$0 (TID $TID): @_\n";}
