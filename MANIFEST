@@ -1,0 +1,19 @@
+.github/workflows/tests.yml
+LICENSE
+Makefile.PL
+MANIFEST			This list of files
+README.md
+scripts/hashest-index.pl
+scripts/hashest-search.pl
+t/01_index.t
+t/04_search.t
+t/90_cleanup.t
+t/senterica/aroC.tfa
+t/senterica/dnaN.tfa
+t/senterica/hemD.tfa
+t/senterica/hisD.tfa
+t/senterica/purE.tfa
+t/senterica/senterica.txt
+t/senterica/sucA.tfa
+t/senterica/thrA.tfa
+t/SRR6881054.shovillSpades.fasta
