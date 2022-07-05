@@ -5,8 +5,12 @@ MANIFEST			This list of files
 README.md
 scripts/hashest-index.pl
 scripts/hashest-search.pl
+t/00_env.t
 t/01_index.t
+t/02_dump.t
 t/04_search.t
+t/20_benchmark_index.t
+t/21_benchmark_search.t
 t/90_cleanup.t
 t/senterica/aroC.tfa
 t/senterica/dnaN.tfa
