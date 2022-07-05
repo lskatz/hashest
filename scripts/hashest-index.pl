@@ -15,7 +15,7 @@ use Digest::MD5 qw/md5_hex md5/;
 use Digest::SHA qw/sha1_hex sha1/;
 
 use version 0.77;
-our $VERSION="0.5.0";
+our $VERSION="0.5.1";
 
 local $0 = basename $0;
 sub logmsg{local $0=basename $0; print STDERR "$0: @_\n";}
