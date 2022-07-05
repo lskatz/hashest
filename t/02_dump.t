@@ -17,9 +17,14 @@ my $dbDir = "$RealBin/senterica";
 my $index = "$RealBin/senterica.hashest";
 my $sha1Index = "$RealBin/senterica.sha1.hashest";
 my $res = "$RealBin/res.tsv";
+my $dump = "$index.dmp";
 
-for my $f($index, glob("$index.*"), $sha1Index, $res, "$res.log"){
-  unlink($f);
-}
-pass("removed files");
+subtest 'dump' => sub{
+  my $exit_code = system("hashest-search.pl --db $index --dump > $dump 2> $dump.log");
+  is($exit_code, 0, "dumping the senterica scheme with ".basename($index)." to ".$dump);
+  if($exit_code > 1){
+    note `cat $dump.log`;
+  }
+
+};
 

@@ -10,16 +10,23 @@ hashest-index.pl: indexes a fasta file
     where locus is a string and allele is an int
   Usage: hashest-index.pl [options] *.fasta [*.gbk...]
   --k       kmer length [default: 16]
+  --hashing Hashing algorithm md5_hex, sha1_hex [default: md5_hex]
+  --output  Output prefix for index files
   --version print version and exit
   --help    This useful help menu
 
 hashest-search.pl: reports an MLST profile for a genome assembly
   Usage: hashest-search.pl [options] *.fasta [*.gbk...] > out.tsv
-    --db      Database from hashest-index.pl
-    --numcpus Number of threads to use [default: 1]
-    --dump    Dump the database instead of analyzing anything 
-    --help    This useful help menu
-
+  --db         Database from hashest-index.pl
+  --numcpus    Number of threads to use [default: 1]
+  --dump       Dump the database instead of analyzing anything
+  --novel-alleles  (optional) A filename to write novel alleles
+               into a fasta format. Defline will be
+               >locusname_hashsum
+  --putatives  Print a '?' instead of an int when a locus
+               has been detected but no exact allele was
+               found
+  --help       This useful help menu
 ```
 
 * Step 1: get a fasta file or set of fasta files with alleles in the format of `>locus_allele`, e.g., `>abcZ_1`.

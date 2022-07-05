@@ -11,10 +11,11 @@ use List::MoreUtils qw/uniq/;
 
 # Quick hash implementation that is core-perl
 #use B qw/hash/;
-use Digest::MD5 qw/md5_hex/;
+use Digest::MD5 qw/md5_hex md5/;
+use Digest::SHA qw/sha1_hex sha1/;
 
 use version 0.77;
-our $VERSION="0.3.1";
+our $VERSION="0.5.0";
 
 local $0 = basename $0;
 sub logmsg{local $0=basename $0; print STDERR "$0: @_\n";}
@@ -22,22 +23,24 @@ exit(main());
 
 sub main{
   my $settings={};
-  GetOptions($settings,qw(help version output=s k=i)) or die $!;
-  usage() if($$settings{help} || !@ARGV);
-
-  $$settings{k} ||= 16;
-  $$settings{output} ||= die("ERROR: need --output");
-
+  GetOptions($settings,qw(help hashing=s version output=s k=i)) or die $!;
   if($$settings{version}){
     print "$0 $VERSION\n";
     return 0;
   }
 
+  usage() if($$settings{help} || !@ARGV);
+
+  $$settings{k} ||= 16;
+  $$settings{output} ||= die("ERROR: need --output");
+  $$settings{hashing}||= "md5_hex";
+
   my %index = (
     settings => {
       k => $$settings{k},
       version => $VERSION,
-      hashing => "md5_hex",
+      hashing => $$settings{hashing},
+      locusArray => [], # To be filled out later as an array of locus names
     }
   );
 
@@ -49,6 +52,11 @@ sub main{
       while(my($hash, $values) = each(%{ $$indices{$key} })){
         $index{$key}{$hash} = $values;
       }
+    }
+
+    # Record the stops
+    while(my($stop, $count) = each(%{ $$indices{stops} })){
+      $index{stops}{$stop} += $count;
     }
 
   }
@@ -70,6 +78,8 @@ sub indexFasta{
   
   my %indexLocus;
   my %indexAllele;
+  my $hashing_sub = \&{$$settings{hashing}};
+  my %stops;
 
   my $in = Bio::SeqIO->new(-file=>$file);
   while(my $seq = $in->next_seq){
@@ -79,12 +89,16 @@ sub indexFasta{
     my $allele = pop(@F);
     my $locus = join("_", @F);
 
-    my $locusHash  = md5_hex(substr($sequence, 0, $k));
+    my $locusHash  = &$hashing_sub(substr($sequence, 0, $k));
     #my $alleleHash = md5_hex($sequence);
     $indexLocus{$locusHash} = $locus;
     $indexAllele{$locus}{$sequence} = [$locus, $allele];
+
+    # Record the stop codon
+    my $stop = substr($sequence, -3, 3);
+    $stops{$stop}++;
   }
-  return {locus=>\%indexLocus, allele=>\%indexAllele};
+  return {locus=>\%indexLocus, allele=>\%indexAllele, stops=>\%stops};
 }
 
 
@@ -94,6 +108,7 @@ sub usage{
     where locus is a string and allele is an int
   Usage: $0 [options] *.fasta [*.gbk...]
   --k       kmer length [default: 16]
+  --hashing Hashing algorithm md5_hex, sha1_hex [default: md5_hex]
   --output  Output prefix for index files
   --version print version and exit
   --help    This useful help menu
