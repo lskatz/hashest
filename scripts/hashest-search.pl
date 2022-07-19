@@ -142,6 +142,10 @@ sub printSeqs{
     else{
       next;
     }
+    if(!$sequence){
+      logmsg "WARNING: sequence was not defined for ${locus}_$allele";
+      next;
+    }
     $fasta .= ">${locus}_$allele $asm\n$sequence\n";
   }
 

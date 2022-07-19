@@ -44,6 +44,7 @@ sub main{
   );
 
   for my $f(@ARGV){
+    logmsg "Indexing $f ...";
     my $indices = indexFasta($f, $$settings{k}, $settings);
 
     # Combine the associative arrays into the larger associative array
@@ -72,6 +73,7 @@ sub main{
 
   # Save the indices
   my $indexfile = $$settings{output};
+  logmsg "Writing the index to $indexfile";
   open (my $fh, '>:raw', $indexfile) or die "ERROR: could not write to $indexfile: $!";
   nstore_fd \%index, $fh;
   close $fh;
