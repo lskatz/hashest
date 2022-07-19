@@ -19,7 +19,7 @@ my $sha1Index = "$RealBin/senterica.sha1.hashest";
 my $res = "$RealBin/res.tsv";
 
 subtest 'search' => sub{
-  my $exit_code = system("hashest-search.pl --db $index $asm > $res 2> $res.log");
+  my $exit_code = system("hashest-search.pl --outseqs $res.fasta --db $index $asm > $res 2> $res.log");
   is($exit_code, 0, "searching the senterica scheme with ".basename($asm));
 
   if($exit_code > 0){

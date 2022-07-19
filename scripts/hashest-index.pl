@@ -15,7 +15,7 @@ use Digest::MD5 qw/md5_hex md5/;
 use Digest::SHA qw/sha1_hex sha1/;
 
 use version 0.77;
-our $VERSION="0.5.1";
+our $VERSION="0.6.0";
 
 local $0 = basename $0;
 sub logmsg{local $0=basename $0; print STDERR "$0: @_\n";}
@@ -40,7 +40,6 @@ sub main{
       k => $$settings{k},
       version => $VERSION,
       hashing => $$settings{hashing},
-      locusArray => [], # To be filled out later as an array of locus names
     }
   );
 
@@ -57,6 +56,13 @@ sub main{
     # Record the stops
     while(my($stop, $count) = each(%{ $$indices{stops} })){
       $index{stops}{$stop} += $count;
+    }
+
+    # Record the sequences
+    while(my($locus, $alleleArr) = each(%{ $$indices{alleleSeq} })){
+      while(my($allele,$sequence) = each(%$alleleArr)){
+        $index{alleleSeq}{$locus}{$allele} = $sequence;
+      }
     }
 
   }
@@ -78,6 +84,7 @@ sub indexFasta{
   
   my %indexLocus;
   my %indexAllele;
+  my %alleleSeq;
   my $hashing_sub = \&{$$settings{hashing}};
   my %stops;
 
@@ -94,11 +101,13 @@ sub indexFasta{
     $indexLocus{$locusHash} = $locus;
     $indexAllele{$locus}{$sequence} = [$locus, $allele];
 
+    $alleleSeq{$locus}{$allele} = $sequence;
+
     # Record the stop codon
     my $stop = substr($sequence, -3, 3);
     $stops{$stop}++;
   }
-  return {locus=>\%indexLocus, allele=>\%indexAllele, stops=>\%stops};
+  return {locus=>\%indexLocus, allele=>\%indexAllele, alleleSeq=>\%alleleSeq, stops=>\%stops};
 }
 
 
