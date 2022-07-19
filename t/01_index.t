@@ -23,7 +23,7 @@ subtest 'index' => sub{
 
   # Read the database and look for expected keys
   my $retrieved = retrieve($index);
-  my @expectedKeys = sort qw(settings locusArray locus allele stops);
+  my @expectedKeys = sort qw(settings locusArray locus allele stops alleleSeq);
   my @obsKeys = sort keys(%$retrieved);
   is_deeply(\@obsKeys, \@expectedKeys, "Reading the database back");
   

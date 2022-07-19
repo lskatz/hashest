@@ -7,6 +7,7 @@ use File::Basename qw/dirname basename/;
 use FindBin qw/$RealBin/;
 use Storable qw/retrieve/;
 use Data::Dumper;
+use Bio::SeqIO;
 
 use Test::More tests => 1;
 
@@ -19,7 +20,7 @@ my $sha1Index = "$RealBin/senterica.sha1.hashest";
 my $res = "$RealBin/res.tsv";
 
 subtest 'search' => sub{
-  my $exit_code = system("hashest-search.pl --db $index $asm > $res 2> $res.log");
+  my $exit_code = system("hashest-search.pl --outseqs $res.fasta --db $index $asm > $res 2> $res.log");
   is($exit_code, 0, "searching the senterica scheme with ".basename($asm));
 
   if($exit_code > 0){
@@ -52,6 +53,23 @@ subtest 'search' => sub{
   );
   is_deeply(\%profile, \%expectedProfile, "7-gene MLST results");
   note `cut -f 2- $res | column -t`;
+
+  my %locusSeqObj;
+  my $seqin = Bio::SeqIO->new(-file=>"$res.fasta");
+  while(my $seq = $seqin->next_seq){
+    my($locus, $allele) = split(/_/, $seq->id);
+    $locusSeqObj{$locus} //= $seq;
+  }
+  is_deeply(
+    [sort{$a cmp $b} keys(%locusSeqObj)],
+    [sort{$a cmp $b} keys(%expectedProfile)],
+    "Sequence identifiers in locus fasta file",
+  );
+  subtest 'seq lengths'=>sub{
+    while(my($locus,$seq) = each(%locusSeqObj)){
+      cmp_ok($seq->length, '>', 1, "Length of $locus > 1");
+    }
+  };
 
   $exit_code = system("hashest-search.pl --db $sha1Index $asm > $res 2> $res.log");
   is($exit_code, 0, "searching the senterica scheme with sha1 and ".basename($asm));

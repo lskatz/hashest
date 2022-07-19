@@ -21,7 +21,7 @@ exit(main());
 
 sub main{
   my $settings={};
-  GetOptions($settings,qw(help novel-alleles=s putatives numcpus=i version k dump db|database=s)) or die $!;
+  GetOptions($settings,qw(help outseqs=s putatives numcpus=i version k dump db|database=s)) or die $!;
 
   usage() if($$settings{help});
 
@@ -85,11 +85,11 @@ sub main{
 sub printer{
   my($Q, $settings) = @_;
 
-  my $naFh;
-  if($$settings{'novel-alleles'}){
-    my $novelAlleles = $$settings{'novel-alleles'};
+  my $seqsFh;
+  if($$settings{outseqs}){
+    my $novelAlleles = $$settings{outseqs};
     logmsg "Opening $novelAlleles for writing...";
-    open($naFh, '>', $novelAlleles) or die "ERROR: could not write to novel alleles file $novelAlleles: $!";
+    open($seqsFh, '>', $novelAlleles) or die "ERROR: could not write to novel alleles file $novelAlleles: $!";
   }
 
   while(defined(my $toPrint = $Q->dequeue)){
@@ -97,11 +97,11 @@ sub printer{
     if($fhStr eq 'stdout'){
       print $str . "\n";
     }
-    elsif($fhStr eq 'novel'){
-      print $naFh $str . "\n";
+    elsif($fhStr eq 'seqs'){
+      print $seqsFh $str . "\n";
     }
     else {
-      die "ERROR: did not understand filehandle $fhStr to write the string $str";
+      die "ERROR: did not understand filehandle nickname $fhStr to write the string $str";
     }
 
   }
@@ -117,28 +117,58 @@ sub searchAsmWorker{
   while(defined(my $asm = $asmQ->dequeue)){
     logmsg "Typing for $asm";
     my $loci = searchAsm($asm, $k, $hashing_sub, $index, $settings);
-    my $printLine = $asm;
-    for my $locus(@locusName){
-      my $allele = $$loci{$locus} // 0;
-      $printLine .= "\t$allele";
-    }
-    $printQ->enqueue(['stdout', $printLine]);
-
-    if($$settings{'novel-alleles'}){
-      my $novelAlleles = $$loci{_novel};
-      for my $locus(@locusName){
-        for my $alleleSeq(@{ $$novelAlleles{$locus} }){
-          #my $allele = $hashing_sub($$novelAlleles
-          my $hashsum = &$hashing_sub($alleleSeq);
-          $printQ->enqueue(['novel', ">".$locus."_".$hashsum."\n$alleleSeq"]);
-        }
-      }
+    printTsvRow($asm, \@locusName, $loci, $printQ, $settings);
+    if($$settings{outseqs}){
+      printSeqs($asm, \@locusName, $loci, $index, $hashing_sub, $printQ, $settings);
     }
 
     $numSearched++;
   }
 
   return $numSearched;
+}
+
+sub printSeqs{
+  my($asm, $locusName, $loci, $index, $hashing_sub, $printQ, $settings) = @_;
+
+  my $fasta = "";
+  for my $locus(@$locusName){
+    my($sequence, $allele);
+
+    if(defined($$loci{$locus})){
+      $allele   = $$loci{$locus};
+      $sequence = $$index{alleleSeq}{$locus}{$allele};
+    }
+    else{
+      next;
+    }
+    $fasta .= ">${locus}_$allele $asm\n$sequence\n";
+  }
+
+  # Print novel alleles too
+  for my $locus(@$locusName){
+    if(defined($$loci{_novel}{$locus})){
+
+      for my $sequence(@{ $$loci{_novel}{$locus} }){
+        my $allele   = &$hashing_sub($sequence);
+        $fasta .= ">${locus}_$allele $asm\n$sequence\n";
+      }
+
+    }
+  }
+
+  $printQ->enqueue(['seqs', $fasta]);
+}
+
+sub printTsvRow{
+  my($asm, $locusName, $loci, $printQ, $settings) = @_;
+
+  my $printLine = $asm;
+  for my $locus(@$locusName){
+    my $allele = $$loci{$locus} // 0;
+    $printLine .= "\t$allele";
+  }
+  $printQ->enqueue(['stdout', $printLine]);
 }
 
 sub searchAsm{
@@ -156,17 +186,15 @@ sub searchAsm{
       my $seqLength = length($sequence);
 
       # sliding window to get hashes and match against db
-      SLIDING_WINDOW:
       for(my $i=0; $i<$seqLength-$k; $i++){
         my $subseq = substr($sequence, $i, $k);
         my $locusHash = &$hashing_sub($subseq);
+        my $alleleSeq = "";
 
-        #logmsg "Compare $locusHash";
         # Test if we found the locus hash which would indicate we found the locus
         if($$index{locus}{$locusHash}){
           # Get the name of the putative locus
           my $locus = $$index{locus}{$locusHash};
-          #logmsg "Testing locus $locus from ".$seq->id." pos $i";
           # Get downstream sequence to see if it matches an allele
           my $candidateSequence = "";
           for(my $j=$k;$j<$$settings{maxGeneLength};$j++){
@@ -180,25 +208,32 @@ sub searchAsm{
               #push(@locus, $$index{allele}{$locus}{$candidateSequence});
               my $allele = $$index{allele}{$locus}{$candidateSequence}[1];
               if(defined $locus{$locus}){
-                logmsg "WARNING: locus $locus is defined more than once. Appending allele $locus{$locus} with ~$allele";
-                $allele = "~$allele";
+                logmsg "WARNING: locus $locus has been defined more than once. Applying '?' for $locus.";
+                $locus{$locus} = '?';
+                $alleleSeq = 'N' x 60;
+              } else {
+                $locus{$locus} .= $allele;
+                $alleleSeq = $candidateSequence;
               }
-              $locus{$locus} .= $allele;
 
               # push ahead the search to wherever $j is but back it up the kmer length
               $i += $j-$k;
-              next SLIDING_WINDOW;
             }
           }
 
-          # Figure out the ORF but it should be at least 20aa or 60nt.
-          for(my $pos=60; $pos < length($candidateSequence); $pos+=3){
-            my $candidateOrf = substr($candidateSequence, 0, $pos);
-            my $candidateStop = substr($candidateOrf, -3, 3);
-            #logmsg $pos;
-            if($$index{stops}{$candidateStop}){
-              push(@{ $locus{_novel}{$locus} }, $candidateOrf);
-              last;
+          # If the allele sequence hasn't been determined yet,
+          # get it by detecting the first ORF.
+          if(!$alleleSeq){
+            # Figure out the ORF but it should be at least 20aa or 60nt.
+            for(my $pos=60; $pos < length($candidateSequence); $pos+=3){
+              my $candidateOrf = substr($candidateSequence, 0, $pos);
+              my $candidateStop = substr($candidateOrf, -3, 3);
+              #logmsg $pos;
+              if($$index{stops}{$candidateStop}){
+                push(@{ $locus{_novel}{$locus} }, $candidateOrf);
+                $alleleSeq = $candidateOrf;
+                last;
+              }
             }
           }
 
@@ -232,9 +267,11 @@ sub usage{
   --db         Database from hashest-index.pl
   --numcpus    Number of threads to use [default: 1]
   --dump       Dump the database instead of analyzing anything 
-  --novel-alleles  (optional) A filename to write novel alleles
+  --outseqs    (optional) A filename to write alleles
                into a fasta format. Defline will be
+               >locusname_alleleInt or for novel alleles,
                >locusname_hashsum
+               The assembly filename will also appear on the defline.
   --putatives  Print a '?' instead of an int when a locus
                has been detected but no exact allele was
                found
