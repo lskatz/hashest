@@ -38,6 +38,23 @@ Columns are loci, rows are assemblies, and values are alleles.
 Tildes (`~`) represent multiple allele matches and probably multiple copies/variations of a gene.
 Question marks (`?`) indicate a match to a locus via a hash match, but no allele match was found.
 
+## API
+
+If you want to load the Hashest index, you can use `Storable` like so.
+At this time, there is no direct Hashest API apart from loading the database.
+
+```perl
+use strict;
+use warnings;
+use Storable qw/retrieve/;
+
+my $db = retrieve("file.hashest");
+
+# and then do something with the database, e.g.,
+use Data::Dumper qw/Dumper/;
+print Dumper $db;
+```
+
 # Installation
 
 Requires perl with threads and BioPerl
@@ -69,8 +86,10 @@ Uses native perl md5 hashing.
 Database is in a Perl storable object, similar to a Python pickle.
 The data structure has these keys
 
-* locusArray => [array of locus names]
+* locusArray => [array of locus names], meant to hold a stable sort of the locus names
 * locus => associative array of `hash`=>`locusname`
 * allele => associative array of `locus` => `[sequence]` => `[locus, allele]`
-* settings => information about the database.  Stores `k`, `hashing` (hashing is `md5_hex` in v0.2 and later).
+* alleleSeq => associative array of `locus` => `{allele => sequence}` (v0.6 and later)
+* settings => information about the database.  Stores `k`, `version`, `hashing` (hashing is `md5_hex` in v0.2 and later).
+* stops => associative array of `{stopCodon => count}` where stopCodon is any last three nucleitides of any allele followed by the count of how many were found, e.g., `{CAG => 1997}` for the 7-gene senterica database.
 
